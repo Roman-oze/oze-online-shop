@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oze Bangladesh | High-Performance Laravel E-Commerce & Dynamic RBAC Engine</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0a0a0a',
+                        darkCard: '#141414',
+                        darkBorder: '#262626',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #a3a3a3; border-radius: 3px; }
+        .dark ::-webkit-scrollbar-thumb { background: #525252; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #printable-receipt, #printable-receipt * { visibility: visible; }
+            #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body class="bg-white text-neutral-900 dark:bg-darkBg dark:text-neutral-100 transition-colors duration-300 min-h-screen flex flex-col selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black">
+
+    <!-- 1. Announcement Bar -->
+    <div id="announcement-bar" class="bg-black text-white dark:bg-neutral-900 dark:text-neutral-200 text-xs sm:text-sm py-2 px-4 text-center font-medium relative z-50">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="hidden sm:block text-neutral-400">⚡ OZE Bangladesh • High-Performance Laravel Eloquent Engine</div>
+            <div id="announcement-text" class="flex-1 text-center font-semibold tracking-wide">
+                Free Express Delivery across Dhaka, Chattogram & Sylhet on orders over ৳1,500!
+            </div>
+            <div class="hidden sm:flex items-center gap-4 text-neutral-400">
+                <span>Hotline: 09613-998877</span>
+                <button onclick="closeAnnouncement()" class="hover:text-white transition" aria-label="Close">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Sticky Header & Navigation -->
+    <header id="site-header" class="sticky top-0 z-40 bg-white/90 dark:bg-darkBg/90 backdrop-blur-md border-b border-neutral-200 dark:border-darkBorder transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20 gap-4">
+                
+                <!-- Brand & Mobile Toggle -->
+                <div class="flex items-center gap-3">
+                    <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition" aria-label="Menu">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                    <a href="#" onclick="switchView('storefront')" class="flex items-center gap-2 group">
+                        <div class="w-10 h-10 bg-black dark:bg-white text-white dark:text-black font-extrabold text-xl flex items-center justify-center rounded-xl tracking-tighter group-hover:scale-105 transition">
+                            O
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xl font-extrabold tracking-widest uppercase">OZE</span>
+                            <span class="text-[10px] tracking-wider text-neutral-500 dark:text-neutral-400 font-semibold -mt-1">BANGLADESH</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Live Search Bar -->
+                <div class="hidden md:flex flex-1 max-w-xl relative">
+                    <div class="relative w-full">
+                        <input type="text" id="search-input" placeholder="Search Oze for electronics, fashion, shoes & more..." 
+                            class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-full py-2.5 pl-12 pr-10 text-sm focus:outline-none focus:border-black dark:focus:border-white transition">
+                        <i data-lucide="search" class="w-4 h-4 text-neutral-400 absolute left-4 top-3.5"></i>
+                        <button id="clear-search" class="hidden absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <!-- Search Suggestions Dropdown -->
+                    <div id="search-dropdown" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-2xl shadow-2xl max-h-96 overflow-y-auto z-50 p-2"></div>
+                </div>
+
+                <!-- Actions & Auth / Role Switcher -->
+                <div class="flex items-center gap-1 sm:gap-3">
+                    <!-- Login / Account Button -->
+                    <button onclick="openLoginModal()" class="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        <span>Sign In</span>
+                    </button>
+
+                    <!-- Laravel RBAC Role Switcher Dropdown -->
+                    <div class="relative hidden sm:block">
+                        <button onclick="toggleDashboardMenu()" class="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 px-3.5 py-2 rounded-xl text-xs font-semibold transition">
+                            <i data-lucide="shield" class="w-4 h-4"></i>
+                            <span id="current-role-label">Customer Portal</span>
+                            <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                        </button>
+                        <div id="dashboard-menu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-2xl shadow-2xl py-2 z-50">
+                            <div class="px-4 py-1.5 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Laravel RBAC Roles</div>
+                            <button onclick="switchRole('customer')" class="w-full text-left px-4 py-2 text-xs font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2">
+                                <i data-lucide="user" class="w-3.5 h-3.5"></i> Customer Dashboard
+                            </button>
+                            <button onclick="switchRole('vendor')" class="w-full text-left px-4 py-2 text-xs font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2">
+                                <i data-lucide="store" class="w-3.5 h-3.5"></i> Vendor / Merchant
+                            </button>
+                            <button onclick="switchRole('admin')" class="w-full text-left px-4 py-2 text-xs font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2">
+                                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Admin Control Panel
+                            </button>
+                            <div class="border-t border-neutral-200 dark:border-neutral-800 my-1"></div>
+                            <button onclick="switchRole('superadmin')" class="w-full text-left px-4 py-2 text-xs font-extrabold text-black dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2">
+                                <i data-lucide="crown" class="w-3.5 h-3.5 text-amber-500"></i> Super-Admin Dynamic Control
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle" class="p-2.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition" aria-label="Theme">
+                        <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
+                        <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
+                    </button>
+
+                    <!-- Wishlist -->
+                    <button onclick="openWishlistModal()" class="p-2.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition relative" aria-label="Wishlist">
+                        <i data-lucide="heart" class="w-5 h-5"></i>
+                        <span id="wishlist-badge" class="absolute top-1 right-1 bg-black text-white dark:bg-white dark:text-black text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center scale-0 transition-transform">0</span>
+                    </button>
+
+                    <!-- Cart Drawer -->
+                    <button onclick="openCartDrawer()" class="flex items-center gap-2 bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded-full font-medium text-sm hover:opacity-95 transition shadow-sm">
+                        <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Cart</span>
+                        <span id="cart-badge" class="bg-white text-black dark:bg-black dark:text-white text-xs font-bold px-1.5 py-0.5 rounded-full">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Search Bar -->
+            <div class="md:hidden pb-3 relative">
+                <input type="text" id="mobile-search-input" placeholder="Search Oze products..." 
+                    class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-black dark:focus:border-white transition">
+                <i data-lucide="search" class="w-4 h-4 text-neutral-400 absolute left-3.5 top-3"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- 3. Dynamic Navigation Bar (Controlled via Super-Admin / MySQL simulation) -->
+    <nav class="hidden lg:block bg-neutral-50 dark:bg-neutral-900/50 border-b border-neutral-200 dark:border-darkBorder">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <ul id="dynamic-nav-list" class="flex items-center space-x-8 text-sm font-medium overflow-x-auto no-scrollbar py-3"></ul>
+        </div>
+    </nav>
+
+    <!-- Mobile Navigation Drawer -->
+    <div id="mobile-drawer" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden transition-opacity opacity-0">
+        <div class="absolute left-0 top-0 bottom-0 w-80 bg-white dark:bg-darkCard shadow-2xl p-6 flex flex-col justify-between transform -translate-x-full transition-transform duration-300" id="mobile-drawer-content">
+            <div>
+                <div class="flex items-center justify-between pb-6 border-b border-neutral-200 dark:border-darkBorder">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 bg-black dark:bg-white text-white dark:text-black font-bold flex items-center justify-center rounded-lg text-sm">O</div>
+                        <span class="font-extrabold tracking-wider">OZE BANGLADESH</span>
+                    </div>
+                    <button onclick="closeMobileMenu()" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="py-6 space-y-4">
+                    <button onclick="openLoginModal(); closeMobileMenu();" class="w-full text-left px-4 py-3 rounded-2xl bg-black text-white dark:bg-white dark:text-black text-xs font-bold flex items-center justify-between mb-4">
+                        <span>Sign In / Register</span>
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                    </button>
+                    <h3 class="text-xs font-semibold tracking-wider uppercase text-neutral-400">Laravel RBAC Roles</h3>
+                    <div class="grid grid-cols-1 gap-2">
+                        <button onclick="switchRole('customer'); closeMobileMenu();" class="text-left px-4 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs font-bold">Customer Portal</button>
+                        <button onclick="switchRole('vendor'); closeMobileMenu();" class="text-left px-4 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs font-bold">Vendor Dashboard</button>
+                        <button onclick="switchRole('admin'); closeMobileMenu();" class="text-left px-4 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs font-bold">Admin Panel</button>
+                        <button onclick="switchRole('superadmin'); closeMobileMenu();" class="text-left px-4 py-2.5 rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-black text-xs font-extrabold flex items-center justify-between"><span>Super-Admin Control</span> <i data-lucide="crown" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                    <h3 class="text-xs font-semibold tracking-wider uppercase text-neutral-400 pt-4">Navigation Menus (MySQL)</h3>
+                    <ul id="mobile-nav-list" class="space-y-3 font-medium"></ul>
+                </div>
+            </div>
+            <div class="pt-6 border-t border-neutral-200 dark:border-darkBorder text-xs text-neutral-500 text-center">
+                <p>Hotline: 09613-998877</p>
+                <p class="mt-1">© 2026 Oze Bangladesh Laravel Full-Stack.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN VIEW CONTAINER -->
+    <main class="flex-grow" id="main-view-container">
+        
+        <!-- STOREFRONT VIEW -->
+        <div id="view-storefront">
+            <!-- Hero Carousel -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="relative rounded-3xl overflow-hidden bg-neutral-900 text-white min-h-[420px] sm:min-h-[480px] flex items-center shadow-xl">
+                    <div id="hero-carousel" class="absolute inset-0 flex transition-transform duration-700 ease-in-out">
+                        <!-- Slide 1 -->
+                        <div class="min-w-full h-full relative flex items-center bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-800 p-8 sm:p-16">
+                            <div class="max-w-xl z-10">
+                                <span class="inline-block bg-white text-black text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-4">Oze Eid & Summer Mega Drop</span>
+                                <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight mb-4">Minimalist Luxury.<br>Curated for Bangladesh.</h1>
+                                <p class="text-neutral-300 text-sm sm:text-base mb-8">Discover authentic tech gadgets, premium apparel, and lifestyle essentials with instant bKash, Nagad, Rocket, Cards, and COD.</p>
+                                <div class="flex flex-wrap gap-4">
+                                    <a href="#flash-sale-section" class="bg-white text-black hover:bg-neutral-200 font-semibold px-6 py-3 rounded-full text-sm transition shadow-lg">Shop Flash Sale</a>
+                                    <a href="#featured-section" class="border border-neutral-700 hover:border-white text-white font-semibold px-6 py-3 rounded-full text-sm transition">Explore Catalog</a>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Slide 2 -->
+                        <div class="min-w-full h-full relative flex items-center bg-gradient-to-r from-black via-neutral-900 to-neutral-950 p-8 sm:p-16">
+                            <div class="max-w-xl z-10">
+                                <span class="inline-block bg-neutral-800 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-4">Official Laravel Platform</span>
+                                <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight mb-4">Super-Admin Dynamic Control</h1>
+                                <p class="text-neutral-300 text-sm sm:text-base mb-8">Manage MySQL menus, roles, and granular permissions instantly from the Super-Admin panel.</p>
+                                <button onclick="switchRole('superadmin')" class="bg-white text-black hover:bg-neutral-200 font-semibold px-6 py-3 rounded-full text-sm transition shadow-lg">Open Super-Admin Panel</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="prevSlide()" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/30 text-white p-2.5 rounded-full backdrop-blur-md transition z-20"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                    <button onclick="nextSlide()" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/30 text-white p-2.5 rounded-full backdrop-blur-md transition z-20"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                        <button onclick="currentSlide(0)" class="w-8 h-1.5 rounded-full bg-white transition-all" id="indicator-0"></button>
+                        <button onclick="currentSlide(1)" class="w-3 h-1.5 rounded-full bg-white/50 transition-all" id="indicator-1"></button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Shop by Category Grid -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold tracking-tight">Shop by Category</h2>
+                        <p class="text-sm text-neutral-500 mt-1">Explore top categories curated for Oze shoppers</p>
+                    </div>
+                </div>
+                <div id="category-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+            </section>
+
+            <!-- Flash Sale Section -->
+            <section id="flash-sale-section" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                <div class="bg-neutral-100 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl p-6 sm:p-8">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-neutral-200 dark:border-darkBorder">
+                        <div class="flex items-center gap-4">
+                            <div class="bg-black text-white dark:bg-white dark:text-black p-3 rounded-2xl"><i data-lucide="zap" class="w-6 h-6"></i></div>
+                            <div>
+                                <h2 class="text-2xl font-bold tracking-tight">Flash Sale</h2>
+                                <p class="text-xs sm:text-sm text-neutral-500">Limited-time price drops across popular items</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold uppercase text-neutral-500 mr-2">Ends In:</span>
+                            <div class="flex items-center gap-1.5 font-mono font-bold text-sm">
+                                <span id="timer-hours" class="bg-black text-white dark:bg-white dark:text-black px-2.5 py-1.5 rounded-lg">11</span>:
+                                <span id="timer-mins" class="bg-black text-white dark:bg-white dark:text-black px-2.5 py-1.5 rounded-lg">59</span>:
+                                <span id="timer-secs" class="bg-black text-white dark:bg-white dark:text-black px-2.5 py-1.5 rounded-lg">45</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="flash-sale-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+                </div>
+            </section>
+
+            <!-- Featured Products & Catalog -->
+            <section id="featured-section" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4 border-b border-neutral-200 dark:border-darkBorder pb-6">
+                    <div>
+                        <h2 class="text-2xl sm:text-3xl font-bold tracking-tight">Curated Oze Catalog</h2>
+                        <p class="text-sm text-neutral-500 mt-1">Discover top-rated minimalist products</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="flex items-center bg-neutral-100 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-full p-1 text-xs font-medium">
+                            <button onclick="switchTab('all')" id="tab-all" class="px-4 py-2 rounded-full bg-black text-white dark:bg-white dark:text-black transition">All Products</button>
+                            <button onclick="switchTab('bestseller')" id="tab-bestseller" class="px-4 py-2 rounded-full text-neutral-600 dark:text-neutral-300 transition">Best Sellers</button>
+                            <button onclick="switchTab('new')" id="tab-new" class="px-4 py-2 rounded-full text-neutral-600 dark:text-neutral-300 transition">New Arrivals</button>
+                        </div>
+                        <select id="sort-select" onchange="sortProducts(this.value)" class="bg-neutral-100 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-full px-4 py-2 text-xs font-medium focus:outline-none">
+                            <option value="featured">Sort by: Featured</option>
+                            <option value="low-high">Price: Low to High</option>
+                            <option value="high-low">Price: High to Low</option>
+                            <option value="rating">Top Rated</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+                <div id="product-empty-state" class="hidden text-center py-20">
+                    <div class="w-16 h-16 bg-neutral-100 dark:bg-darkCard rounded-full flex items-center justify-center mx-auto mb-4 text-neutral-400"><i data-lucide="search-x" class="w-8 h-8"></i></div>
+                    <h3 class="text-lg font-bold">No products found</h3>
+                    <p class="text-sm text-neutral-500 mt-1">Try resetting your filters or search query.</p>
+                    <button onclick="resetFilters()" class="mt-4 bg-black text-white dark:bg-white dark:text-black px-6 py-2.5 rounded-full text-sm font-medium">Reset Filters</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- USER DASHBOARD VIEW (Customer, Vendor, Admin, Super-Admin) -->
+        <div id="view-dashboard" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <!-- Dashboard Header & Role Banner -->
+            <div class="bg-neutral-900 text-white rounded-3xl p-6 sm:p-8 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl">
+                <div>
+                    <span id="dash-role-badge" class="bg-white text-black text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Customer Portal</span>
+                    <h1 id="dash-welcome-title" class="text-2xl sm:text-3xl font-extrabold mt-2">Welcome back, Tanvir Ahmed</h1>
+                    <p id="dash-welcome-subtitle" class="text-neutral-400 text-sm mt-1">Manage your orders, saved addresses, and personal Oze profile.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 bg-neutral-800 p-1.5 rounded-2xl border border-neutral-700">
+                    <button onclick="switchRole('customer')" id="role-btn-customer" class="px-3 py-2 rounded-xl text-xs font-bold transition">Customer</button>
+                    <button onclick="switchRole('vendor')" id="role-btn-vendor" class="px-3 py-2 rounded-xl text-xs font-bold transition">Vendor</button>
+                    <button onclick="switchRole('admin')" id="role-btn-admin" class="px-3 py-2 rounded-xl text-xs font-bold transition">Admin</button>
+                    <button onclick="switchRole('superadmin')" id="role-btn-superadmin" class="px-3 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5"><i data-lucide="crown" class="w-3.5 h-3.5 text-amber-400"></i> Super-Admin</button>
+                </div>
+            </div>
+
+            <!-- Dynamic Dashboard Content Area -->
+            <div id="dashboard-content-area"></div>
+        </div>
+    </main>
+
+    <!-- 4. Footer -->
+    <footer class="bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200 dark:border-darkBorder pt-16 pb-12 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
+                <div class="lg:col-span-2">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-8 h-8 bg-black dark:bg-white text-white dark:text-black font-bold flex items-center justify-center rounded-lg text-sm">O</div>
+                        <span class="font-extrabold tracking-wider">OZE BANGLADESH</span>
+                    </div>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-6 max-w-sm">
+                        Bangladesh's premier minimalist e-commerce ecosystem powered by Laravel Eloquent, dynamic MySQL menu management, and multi-role RBAC permissions.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider mb-4">Customer Service</h4>
+                    <ul class="space-y-3 text-sm text-neutral-600 dark:text-neutral-400">
+                        <li><a href="#" onclick="openStaticModal('Help Center')" class="hover:text-black dark:hover:text-white transition">Help Center</a></li>
+                        <li><a href="#" onclick="openStaticModal('Contact Us')" class="hover:text-black dark:hover:text-white transition">Contact Us</a></li>
+                        <li><a href="#" onclick="openStaticModal('Shipping & Returns')" class="hover:text-black dark:hover:text-white transition">Shipping & Returns</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider mb-4">About Oze</h4>
+                    <ul class="space-y-3 text-sm text-neutral-600 dark:text-neutral-400">
+                        <li><a href="#" onclick="openStaticModal('About Us')" class="hover:text-black dark:hover:text-white transition">About Us</a></li>
+                        <li><a href="#" onclick="switchRole('vendor')" class="hover:text-black dark:hover:text-white transition">Vendor Registration</a></li>
+                        <li><a href="#" onclick="openStaticModal('Privacy Policy')" class="hover:text-black dark:hover:text-white transition">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider mb-4">Payment Methods</h4>
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        <div class="bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-xl p-2 text-center text-xs font-bold">bKash</div>
+                        <div class="bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-xl p-2 text-center text-xs font-bold">Nagad</div>
+                        <div class="bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-xl p-2 text-center text-xs font-bold">SSLCommerz</div>
+                        <div class="bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-xl p-2 text-center text-xs font-bold">COD</div>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-neutral-200 dark:border-darkBorder flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-500 gap-4">
+                <p>© 2026 Oze Bangladesh. Laravel Framework High-Performance Architecture Prototype.</p>
+                <span>Dhaka, Bangladesh</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ================= MODALS & DRAWERS ================= -->
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl w-full max-w-md shadow-2xl relative p-6 sm:p-8" id="login-modal-content">
+            <div class="flex items-center justify-between pb-4 border-b border-neutral-200 dark:border-darkBorder mb-6">
+                <div>
+                    <h3 class="font-bold text-lg">Sign In to Oze</h3>
+                    <p class="text-xs text-neutral-500">Access your customer dashboard & orders</p>
+                </div>
+                <button onclick="closeLoginModal()" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="handleLogin(event)" class="space-y-4 text-sm">
+                <div>
+                    <label class="block font-semibold mb-1">Email Address</label>
+                    <input type="email" id="login-email" value="tanvir@oze.com.bd" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block font-semibold">Password</label>
+                        <button type="button" onclick="openForgotModal()" class="text-xs text-neutral-500 hover:underline">Forgot password?</button>
+                    </div>
+                    <input type="password" id="login-password" value="secret123" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-black text-white dark:bg-white dark:text-black py-3.5 rounded-2xl font-bold text-sm hover:opacity-95 shadow-xl transition mt-2">
+                    Sign In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgot-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl w-full max-w-md shadow-2xl relative p-6 sm:p-8">
+            <div class="flex items-center justify-between pb-4 border-b border-neutral-200 dark:border-darkBorder mb-6">
+                <div>
+                    <h3 class="font-bold text-lg">Reset Password</h3>
+                    <p class="text-xs text-neutral-500">We'll send a recovery link to your email</p>
+                </div>
+                <button onclick="closeForgotModal()" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="handleForgot(event)" class="space-y-4 text-sm">
+                <div>
+                    <label class="block font-semibold mb-1">Registered Email</label>
+                    <input type="email" id="forgot-email" placeholder="name@example.com" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-black text-white dark:bg-white dark:text-black py-3.5 rounded-2xl font-bold text-sm hover:opacity-95 shadow-xl transition">
+                    Send Password Reset Link
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cart Drawer -->
+    <div id="cart-drawer" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden transition-opacity opacity-0">
+        <div class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white dark:bg-darkCard shadow-2xl p-6 flex flex-col justify-between transform translate-x-full transition-transform duration-300" id="cart-drawer-content">
+            <div>
+                <div class="flex items-center justify-between pb-4 border-b border-neutral-200 dark:border-darkBorder">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                        <h3 class="font-bold text-lg">Shopping Cart</h3>
+                        <span id="cart-count-badge" class="bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full text-xs font-semibold">0 items</span>
+                    </div>
+                    <button onclick="closeCartDrawer()" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div id="cart-items-container" class="py-4 space-y-4 max-h-[50vh] overflow-y-auto"></div>
+            </div>
+            <div class="pt-4 border-t border-neutral-200 dark:border-darkBorder">
+                <div class="space-y-2 mb-4 text-sm">
+                    <div class="flex justify-between text-neutral-500">
+                        <span>Subtotal</span>
+                        <span id="cart-subtotal" class="font-semibold text-neutral-900 dark:text-neutral-100">৳0</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-500">
+                        <span>Estimated Shipping</span>
+                        <span class="text-emerald-600 font-semibold">Free (Over ৳1,500)</span>
+                    </div>
+                    <div class="flex justify-between text-base font-extrabold pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                        <span>Total</span>
+                        <span id="cart-total">৳0</span>
+                    </div>
+                </div>
+                <button onclick="openCheckoutModal()" class="w-full bg-black text-white dark:bg-white dark:text-black py-3.5 rounded-2xl font-semibold text-sm hover:opacity-95 transition shadow-lg">
+                    Proceed to Daraz-Style Checkout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daraz-Inspired Checkout Modal -->
+    <div id="checkout-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative p-6 sm:p-8" id="checkout-modal-content">
+            <div class="flex items-center justify-between pb-4 border-b border-neutral-200 dark:border-darkBorder mb-6">
+                <div>
+                    <h3 class="font-bold text-lg">Daraz-Inspired Secure Checkout</h3>
+                    <p class="text-xs text-neutral-500">Choose MFS, card or cash on delivery</p>
+                </div>
+                <button onclick="closeCheckoutModal()" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="processOrder(event)" class="space-y-6 text-sm">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-semibold mb-1">Full Name</label>
+                        <input type="text" id="chk-name" value="Tanvir Ahmed" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Mobile Phone (Bangladesh)</label>
+                        <input type="text" id="chk-phone" value="+880 1711-223344" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Delivery Address (District / Area)</label>
+                    <input type="text" id="chk-address" value="House 42, Road 11, Banani, Dhaka" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-2">Select Payment Method</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        <label class="border border-neutral-200 dark:border-darkBorder p-3 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-black dark:hover:border-white transition has-[:checked]:border-black dark:has-[:checked]:border-white has-[:checked]:bg-neutral-50 dark:has-[:checked]:bg-neutral-900">
+                            <input type="radio" name="payment_method" value="bKash" checked class="mb-2">
+                            <span class="font-bold text-xs">bKash</span>
+                        </label>
+                        <label class="border border-neutral-200 dark:border-darkBorder p-3 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-black dark:hover:border-white transition has-[:checked]:border-black dark:has-[:checked]:border-white has-[:checked]:bg-neutral-50 dark:has-[:checked]:bg-neutral-900">
+                            <input type="radio" name="payment_method" value="Nagad" class="mb-2">
+                            <span class="font-bold text-xs">Nagad</span>
+                        </label>
+                        <label class="border border-neutral-200 dark:border-darkBorder p-3 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-black dark:hover:border-white transition has-[:checked]:border-black dark:has-[:checked]:border-white has-[:checked]:bg-neutral-50 dark:has-[:checked]:bg-neutral-900">
+                            <input type="radio" name="payment_method" value="Rocket" class="mb-2">
+                            <span class="font-bold text-xs">Rocket</span>
+                        </label>
+                        <label class="border border-neutral-200 dark:border-darkBorder p-3 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-black dark:hover:border-white transition has-[:checked]:border-black dark:has-[:checked]:border-white has-[:checked]:bg-neutral-50 dark:has-[:checked]:bg-neutral-900">
+                            <input type="radio" name="payment_method" value="Cards" class="mb-2">
+                            <span class="font-bold text-xs">Cards</span>
+                        </label>
+                        <label class="border border-neutral-200 dark:border-darkBorder p-3 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-black dark:hover:border-white transition has-[:checked]:border-black dark:has-[:checked]:border-white has-[:checked]:bg-neutral-50 dark:has-[:checked]:bg-neutral-900">
+                            <input type="radio" name="payment_method" value="Cash on Delivery" class="mb-2">
+                            <span class="font-bold text-xs">COD</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-2xl p-4 space-y-2">
+                    <div class="flex justify-between text-xs text-neutral-500">
+                        <span>Items Subtotal</span>
+                        <span id="chk-subtotal-val" class="font-bold">৳0</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-neutral-500">
+                        <span>Express Delivery (Dhaka)</span>
+                        <span class="font-bold text-emerald-600">৳60</span>
+                    </div>
+                    <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-neutral-200 dark:border-darkBorder">
+                        <span>Total Payable</span>
+                        <span id="chk-total-val">৳0</span>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-black text-white dark:bg-white dark:text-black py-4 rounded-2xl font-bold text-sm hover:opacity-95 shadow-xl transition">
+                    Complete Order & Download Money Receipt
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Receipt & Invoice Modal -->
+    <div id="receipt-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl w-full max-w-3xl max-h-[95vh] overflow-y-auto shadow-2xl relative p-6 sm:p-10" id="printable-receipt">
+            <div class="flex justify-between items-start pb-6 border-b border-neutral-200 dark:border-darkBorder mb-6">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <div class="w-8 h-8 bg-black dark:bg-white text-white dark:text-black font-extrabold text-sm flex items-center justify-center rounded-lg">O</div>
+                        <span class="font-extrabold tracking-widest text-lg">OZE BANGLADESH</span>
+                    </div>
+                    <p class="text-xs text-neutral-500">Official Laravel Order Receipt & Money Invoice</p>
+                </div>
+                <div class="text-right">
+                    <span id="receipt-number" class="font-mono font-bold text-sm bg-neutral-100 dark:bg-neutral-800 px-3 py-1.5 rounded-xl">#OZE-2026-9981</span>
+                    <p id="receipt-date" class="text-xs text-neutral-400 mt-1">Date: Oct 29, 2026</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-6 text-xs mb-8">
+                <div>
+                    <span class="font-bold uppercase tracking-wider text-neutral-400 block mb-1">Billed To:</span>
+                    <h4 id="receipt-customer-name" class="font-bold text-sm">Tanvir Ahmed</h4>
+                    <p id="receipt-customer-phone" class="text-neutral-500">+880 1711-223344</p>
+                    <p id="receipt-customer-address" class="text-neutral-500">House 42, Road 11, Banani, Dhaka</p>
+                </div>
+                <div class="text-right">
+                    <span class="font-bold uppercase tracking-wider text-neutral-400 block mb-1">Payment Details:</span>
+                    <p><span class="font-semibold">Method:</span> <span id="receipt-payment-method">bKash</span></p>
+                    <p><span class="font-semibold">Status:</span> <span class="text-emerald-600 font-bold">PAID / VERIFIED</span></p>
+                    <p><span class="font-semibold">Transaction ID:</span> <span class="font-mono">TRX99823104</span></p>
+                </div>
+            </div>
+
+            <div class="border border-neutral-200 dark:border-darkBorder rounded-2xl overflow-hidden mb-6">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-neutral-50 dark:bg-neutral-900 border-b border-neutral-200 dark:border-darkBorder font-bold uppercase tracking-wider text-neutral-500">
+                        <tr>
+                            <th class="p-3">Item Description</th>
+                            <th class="p-3 text-center">Qty</th>
+                            <th class="p-3 text-right">Price</th>
+                            <th class="p-3 text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="receipt-items-table" class="divide-y divide-neutral-200 dark:divide-darkBorder"></tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end mb-8">
+                <div class="w-64 space-y-2 text-xs">
+                    <div class="flex justify-between text-neutral-500">
+                        <span>Subtotal</span>
+                        <span id="receipt-subtotal">৳0</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-500">
+                        <span>Express Delivery</span>
+                        <span>৳60</span>
+                    </div>
+                    <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-neutral-200 dark:border-darkBorder">
+                        <span>Total Amount</span>
+                        <span id="receipt-total">৳0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-6 border-t border-neutral-200 dark:border-darkBorder">
+                <div class="text-[11px] text-neutral-400">
+                    <p>Verified by Oze Secure Gateway.</p>
+                    <p class="mt-0.5">Thank you for shopping with Oze Bangladesh.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="window.print()" class="bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5"><i data-lucide="printer" class="w-3.5 h-3.5"></i> Download / Print Receipt</button>
+                    <button onclick="closeReceiptModal()" class="bg-black text-white dark:bg-white dark:text-black px-6 py-2 rounded-xl text-xs font-bold transition">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Order Tracking Modal -->
+    <div id="tracking-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl w-full max-w-xl shadow-2xl relative p-6 sm:p-8" id="tracking-modal-content">
+            <div class="flex items-center justify-between pb-4 border-b border-neutral-200 dark:border-darkBorder mb-6">
+                <div>
+                    <h3 class="font-bold text-lg">Live Order Tracking</h3>
+                    <p id="tracking-order-id" class="text-xs text-neutral-500">Tracking Order #OZE-98231</p>
+                </div>
+                <button onclick="closeTrackingModal()" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="space-y-6 py-4">
+                <div class="relative pl-8 space-y-8 before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-neutral-200 dark:before:bg-neutral-800">
+                    <div class="relative">
+                        <div class="absolute -left-8 top-0 w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold">✓</div>
+                        <h4 class="font-bold text-sm">Order Placed & Verified</h4>
+                        <p class="text-xs text-neutral-500">Payment successfully confirmed via gateway.</p>
+                    </div>
+                    <div class="relative">
+                        <div class="absolute -left-8 top-0 w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold">✓</div>
+                        <h4 class="font-bold text-sm">Packed at Oze Central Warehouse</h4>
+                        <p class="text-xs text-neutral-500">Items quality checked and securely boxed in Dhaka.</p>
+                    </div>
+                    <div class="relative">
+                        <div class="absolute -left-8 top-0 w-6 h-6 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center text-xs font-bold animate-pulse">⚡</div>
+                        <h4 class="font-bold text-sm">Out for Delivery</h4>
+                        <p class="text-xs text-neutral-500">Courier agent assigned for doorstep delivery.</p>
+                    </div>
+                    <div class="relative opacity-40">
+                        <div class="absolute -left-8 top-0 w-6 h-6 rounded-full bg-neutral-300 dark:bg-neutral-700 text-white flex items-center justify-center text-xs font-bold">4</div>
+                        <h4 class="font-bold text-sm">Delivered to Customer</h4>
+                        <p class="text-xs text-neutral-500">Pending final doorstep confirmation.</p>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeTrackingModal()" class="w-full bg-black text-white dark:bg-white dark:text-black py-3 rounded-2xl font-bold text-xs mt-4">Close Tracking</button>
+        </div>
+    </div>
+
+    <!-- Wishlist Modal -->
+    <div id="wishlist-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden transform scale-95 transition-transform" id="wishlist-modal-content">
+            <div class="p-6 border-b border-neutral-200 dark:border-darkBorder flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="heart" class="w-5 h-5 text-red-500 fill-red-500"></i>
+                    <h3 class="font-bold text-lg">My Wishlist</h3>
+                    <span id="wishlist-count-header" class="text-xs bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full">0 items</span>
+                </div>
+                <button onclick="closeWishlistModal()" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="wishlist-items-container" class="p-6 overflow-y-auto space-y-4 flex-1"></div>
+        </div>
+    </div>
+
+    <!-- Quick View Modal -->
+    <div id="quickview-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative transform scale-95 transition-transform" id="quickview-modal-content">
+            <button onclick="closeQuickView()" class="absolute right-4 top-4 z-10 p-2 bg-neutral-100 dark:bg-neutral-800 rounded-full hover:bg-neutral-200 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div id="quickview-body" class="grid grid-cols-1 md:grid-cols-2 gap-8 p-6 sm:p-10"></div>
+        </div>
+    </div>
+
+    <!-- Static Info Modal -->
+    <div id="static-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-neutral-200 dark:border-darkBorder flex items-center justify-between">
+                <h3 id="static-modal-title" class="font-bold text-lg">Information</h3>
+                <button onclick="closeStaticModal()" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="static-modal-body" class="p-6 overflow-y-auto space-y-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300"></div>
+        </div>
+    </div>
+
+    <!-- Generic Dynamic Form Modal (For Super-Admin CRUD) -->
+    <div id="dynamic-form-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden transform scale-95 transition-transform" id="dynamic-form-content">
+            <div class="p-6 border-b border-neutral-200 dark:border-darkBorder flex items-center justify-between">
+                <h3 id="form-modal-title" class="font-bold text-lg">Laravel Eloquent Record Form</h3>
+                <button onclick="closeDynamicFormModal()" class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="form-modal-body" class="p-6"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- ================= JAVASCRIPT: LARAVEL SIMULATION & HIGH-PERFORMANCE ENGINE ================= -->
+    <script>
+        /* ================= LARAVEL DATABASE SEED & STATE ================= */
+        const defaultMenus = [
+            { id: 1, name: "All Departments", type: "category", target: "all", order: 1, active: true },
+            { id: 2, name: "Electronics", type: "category", target: "Electronics", order: 2, active: true },
+            { id: 3, name: "Fashion", type: "category", target: "Fashion", order: 3, active: true },
+            { id: 4, name: "Men's Clothing", type: "category", target: "Men's Clothing", order: 4, active: true },
+            { id: 5, name: "Women's Clothing", type: "category", target: "Women's Clothing", order: 5, active: true },
+            { id: 6, name: "Shoes", type: "category", target: "Shoes", order: 6, active: true },
+            { id: 7, name: "Home & Living", type: "category", target: "Home & Living", order: 7, active: true }
+        ];
+
+        const defaultPermissions = [
+            { id: 1, name: "manage_users", role: "admin", description: "Create, edit and delete platform users" },
+            { id: 2, name: "manage_products", role: "vendor", description: "Add and modify store inventory" },
+            { id: 3, name: "manage_menus", role: "superadmin", description: "Dynamic CRUD and reordering of navigation menus" },
+            { id: 4, name: "manage_permissions", role: "superadmin", description: "Assign role-based access control rules" },
+            { id: 5, name: "view_analytics", role: "admin", description: "Access global financial and sales reports" }
+        ];
+
+        const defaultUsers = [
+            { id: 1, name: "Tanvir Ahmed", email: "tanvir@oze.com.bd", role: "customer", phone: "+880 1711-223344" },
+            { id: 2, name: "TechMart BD", email: "merchant@techmart.bd", role: "vendor", phone: "+880 1819-556677" },
+            { id: 3, name: "Admin System", email: "admin@oze.com.bd", role: "admin", phone: "+880 1911-000000" },
+            { id: 4, name: "Super Root", email: "root@oze.com.bd", role: "superadmin", phone: "+880 1500-999999" }
+        ];
+
+        const defaultProducts = [
+            { id: 1, name: "Anker Soundcore Life Q30 ANC Headphones", category: "Electronics", price: 6850, originalPrice: 8500, discount: 19, rating: 4.8, reviews: 142, image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80", badge: "Best Seller", isFlashSale: true, stock: 12, vendor: "TechMart BD", description: "Hybrid active noise cancellation with multiple modes, Hi-Res audio, and 40-hour battery life." },
+            { id: 2, name: "Haylou Solar Plus RT3 AMOLED Smartwatch", category: "Electronics", price: 3499, originalPrice: 4999, discount: 30, rating: 4.7, reviews: 98, image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80", badge: "Sale", isFlashSale: true, stock: 8, vendor: "Gadget & Gear", description: "1.43\" AMOLED display, Bluetooth calling support, comprehensive health tracking, IP68 water resistance." },
+            { id: 3, name: "Oze Heavyweight Cotton Minimalist Black Tee", category: "Men's Clothing", price: 950, originalPrice: 1400, discount: 32, rating: 4.9, reviews: 230, image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80", badge: "Best Seller", isFlashSale: true, stock: 25, vendor: "Oze Apparels", description: "Crafted from 220 GSM combed cotton. Breathable, durable, and tailored for Bangladeshi weather." },
+            { id: 4, name: "Zanzea Elegant Linen Midi Dress", category: "Women's Clothing", price: 2150, originalPrice: 3000, discount: 28, rating: 4.6, reviews: 76, image: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=600&q=80", badge: "New", isFlashSale: true, stock: 15, vendor: "Urban Chic", description: "Breathable cotton-linen blend dress featuring minimalist tailoring and relaxed fit." },
+            { id: 5, name: "Baseus 20000mAh 65W Fast Power Bank", category: "Electronics", price: 3850, originalPrice: 5200, discount: 26, rating: 4.9, reviews: 310, image: "https://images.unsplash.com/photo-1609592424155-2305537482a4?auto=format&fit=crop&w=600&q=80", badge: "Best Seller", isFlashSale: false, stock: 40, vendor: "TechMart BD", description: "High-capacity portable charger capable of fast-charging laptops and phones during power outages." },
+            { id: 6, name: "Classic Minimalist White Leather Sneakers", category: "Shoes", price: 2490, originalPrice: 3500, discount: 29, rating: 4.5, reviews: 115, image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=600&q=80", badge: "Sale", isFlashSale: false, stock: 18, vendor: "Footwork BD", description: "Clean synthetic leather sneakers with cushioned insoles for everyday wear." },
+            { id: 7, name: "Ceramic Pour-Over Coffee Dripper Set", category: "Home & Living", price: 1650, originalPrice: 2200, discount: 25, rating: 4.8, reviews: 64, image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80", badge: "New", isFlashSale: false, stock: 20, vendor: "HomeLiving", description: "Handcrafted ceramic dripper with wooden collar for artisanal coffee brewing." },
+            { id: 8, name: "CeraVe Hydrating Facial Cleanser 473ml", category: "Beauty & Personal Care", price: 1850, originalPrice: 2300, discount: 20, rating: 4.9, reviews: 420, image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80", badge: "Best Seller", isFlashSale: false, stock: 30, vendor: "Beauty Lounge", description: "Gentle daily facial cleanser with ceramides and hyaluronic acid." }
+        ];
+
+        const categoriesList = [
+            { name: "Electronics", icon: "cpu", count: 42 },
+            { name: "Fashion", icon: "shirt", count: 56 },
+            { name: "Men's Clothing", icon: "user", count: 38 },
+            { name: "Women's Clothing", icon: "sparkles", count: 64 },
+            { name: "Shoes", icon: "footprints", count: 29 },
+            { name: "Beauty & Personal Care", icon: "heart-pulse", count: 45 },
+            { name: "Home & Living", icon: "home", count: 51 },
+            { name: "Accessories", icon: "watch", count: 33 },
+            { name: "Sports & Outdoors", icon: "activity", count: 24 }
+        ];
+
+        // Persistent State via localStorage (Simulating MySQL Eloquent Models)
+        let dbMenus = JSON.parse(localStorage.getItem('oze_db_menus')) || defaultMenus;
+        let dbPermissions = JSON.parse(localStorage.getItem('oze_db_permissions')) || defaultPermissions;
+        let dbUsers = JSON.parse(localStorage.getItem('oze_db_users')) || defaultUsers;
+        let productsData = JSON.parse(localStorage.getItem('oze_db_products')) || defaultProducts;
+        let cart = JSON.parse(localStorage.getItem('oze_cart')) || [];
+        let wishlist = JSON.parse(localStorage.getItem('oze_wishlist')) || [];
+        let orders = JSON.parse(localStorage.getItem('oze_orders')) || [
+            { id: 101, number: '#OZE-98231', date: 'Oct 28, 2026', total: 7800, method: 'bKash', status: 'Out for Delivery', items: [{ name: 'Anker Soundcore Life Q30', qty: 1, price: 6850 }] }
+        ];
+        let currentTab = 'all';
+        let currentCategoryFilter = 'all';
+        let currentSort = 'featured';
+        let currentSlideIndex = 0;
+        let currentRole = 'customer'; // customer, vendor, admin, superadmin
+        let currentView = 'storefront'; // storefront, dashboard
+
+        function saveLaravelDB() {
+            localStorage.setItem('oze_db_menus', JSON.stringify(dbMenus));
+            localStorage.setItem('oze_db_permissions', JSON.stringify(dbPermissions));
+            localStorage.setItem('oze_db_users', JSON.stringify(dbUsers));
+            localStorage.setItem('oze_db_products', JSON.stringify(productsData));
+            localStorage.setItem('oze_orders', JSON.stringify(orders));
+        }
+
+        /* ================= INITIALIZATION ================= */
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            renderDynamicMenus();
+            renderCategories();
+            renderProducts();
+            renderFlashSale();
+            updateBadgeCounts();
+            initSearch();
+            initCountdown();
+            lucide.createIcons();
+        });
+
+        /* ================= AUTHENTICATION MODALS ================= */
+        function openLoginModal() {
+            const modal = document.getElementById('login-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+        }
+        function closeLoginModal() {
+            document.getElementById('login-modal').classList.remove('flex');
+            document.getElementById('login-modal').classList.add('hidden');
+        }
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            closeLoginModal();
+            showToast(`Welcome back, ${email}! Successfully signed in.`, 'success');
+            switchRole('customer');
+        }
+        function openForgotModal() {
+            closeLoginModal();
+            const modal = document.getElementById('forgot-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+        }
+        function closeForgotModal() {
+            document.getElementById('forgot-modal').classList.remove('flex');
+            document.getElementById('forgot-modal').classList.add('hidden');
+        }
+        function handleForgot(e) {
+            e.preventDefault();
+            closeForgotModal();
+            showToast('Password reset link sent to your email successfully.', 'success');
+        }
+
+        /* ================= THEME MANAGEMENT ================= */
+        function initTheme() {
+            const savedTheme = localStorage.getItem('oze_theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            document.getElementById('theme-toggle').addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                const isDark = document.documentElement.classList.contains('dark');
+                localStorage.setItem('oze_theme', isDark ? 'dark' : 'light');
+                showToast(`Switched to ${isDark ? 'Dark' : 'Light'} Mode`, 'info');
+            });
+        }
+
+        function closeAnnouncement() {
+            document.getElementById('announcement-bar').style.display = 'none';
+        }
+
+        /* ================= DYNAMIC MENUS (SUPER-ADMIN CONTROLLED) ================= */
+        function renderDynamicMenus() {
+            const desktopNav = document.getElementById('dynamic-nav-list');
+            const mobileList = document.getElementById('mobile-nav-list');
+            if (!desktopNav || !mobileList) return;
+
+            const sortedMenus = [...dbMenus].sort((a, b) => a.order - b.order);
+            let desktopHTML = '';
+            let mobileHTML = '';
+
+            sortedMenus.forEach(menu => {
+                if (!menu.active) return;
+                const isSel = currentCategoryFilter === menu.target;
+                desktopHTML += `<li><button onclick="handleMenuClick('${menu.type}', '${menu.target}')" class="hover:text-black dark:hover:text-white transition whitespace-nowrap ${isSel ? 'font-bold underline underline-offset-8' : 'text-neutral-500'}">${menu.name}</button></li>`;
+                mobileHTML += `<li><button onclick="handleMenuClick('${menu.type}', '${menu.target}'); closeMobileMenu();" class="w-full text-left py-2 hover:font-bold transition flex items-center justify-between"><span>${menu.name}</span><span class="text-[10px] bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full uppercase">${menu.type}</span></button></li>`;
+            });
+
+            desktopNav.innerHTML = desktopHTML;
+            mobileList.innerHTML = mobileHTML;
+            lucide.createIcons();
+        }
+
+        function handleMenuClick(type, target) {
+            if (type === 'category') {
+                filterByCategory(target);
+            } else if (type === 'link') {
+                if (target === 'flash') {
+                    switchView('storefront');
+                    document.getElementById('flash-sale-section').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    showToast(`Navigated to ${target}`, 'info');
+                }
+            }
+        }
+
+        /* ================= VIEW & ROLE SWITCHING (LARAVEL RBAC) ================= */
+        function switchView(viewName) {
+            currentView = viewName;
+            const storefront = document.getElementById('view-storefront');
+            const dashboard = document.getElementById('view-dashboard');
+            
+            if (viewName === 'storefront') {
+                storefront.classList.remove('hidden');
+                dashboard.classList.add('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                storefront.classList.add('hidden');
+                dashboard.classList.remove('hidden');
+                renderDashboardContent();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function toggleDashboardMenu() {
+            const menu = document.getElementById('dashboard-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        function switchRole(role) {
+            currentRole = role;
+            const dropdown = document.getElementById('dashboard-menu');
+            if (dropdown) dropdown.classList.add('hidden');
+            
+            const roleLabels = { 
+                customer: 'Customer Portal', 
+                vendor: 'Vendor Portal', 
+                admin: 'Admin Control Panel', 
+                superadmin: 'Super-Admin Dashboard' 
+            };
+            document.getElementById('current-role-label').textContent = roleLabels[role];
+            
+            switchView('dashboard');
+            showToast(`Laravel RBAC: Logged in as ${role.toUpperCase()}`, 'success');
+        }
+
+        function renderDashboardContent() {
+            const area = document.getElementById('dashboard-content-area');
+            const titleEl = document.getElementById('dash-welcome-title');
+            const subEl = document.getElementById('dash-welcome-subtitle');
+            const badgeEl = document.getElementById('dash-role-badge');
+
+            ['customer', 'vendor', 'admin', 'superadmin'].forEach(r => {
+                const btn = document.getElementById(`role-btn-${r}`);
+                if (btn) {
+                    if (r === currentRole) {
+                        btn.className = r === 'superadmin' 
+                            ? 'px-3 py-2 rounded-xl text-xs font-extrabold bg-amber-500 text-black transition flex items-center gap-1.5' 
+                            : 'px-3 py-2 rounded-xl text-xs font-bold bg-white text-black transition';
+                    } else {
+                        btn.className = r === 'superadmin'
+                            ? 'px-3 py-2 rounded-xl text-xs font-bold text-amber-400 hover:text-white transition flex items-center gap-1.5'
+                            : 'px-3 py-2 rounded-xl text-xs font-bold text-neutral-400 hover:text-white transition';
+                    }
+                }
+            });
+
+            if (currentRole === 'customer') {
+                badgeEl.textContent = 'Customer Role (Auth Middleware)';
+                titleEl.textContent = 'Welcome back, Tanvir Ahmed';
+                subEl.textContent = 'View your active orders, track shipments, and download digital money receipts.';
+                
+                area.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder p-6 rounded-3xl">
+                            <span class="text-xs text-neutral-400 font-semibold uppercase">Total Orders</span>
+                            <h3 class="text-3xl font-extrabold mt-2">${orders.length} Orders</h3>
+                            <p class="text-xs text-emerald-600 mt-1">Live tracking active</p>
+                        </div>
+                        <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder p-6 rounded-3xl">
+                            <span class="text-xs text-neutral-400 font-semibold uppercase">Wishlist Saved</span>
+                            <h3 class="text-3xl font-extrabold mt-2">${wishlist.length} Items</h3>
+                            <button onclick="openWishlistModal()" class="text-xs font-bold underline mt-1">View Wishlist</button>
+                        </div>
+                        <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder p-6 rounded-3xl">
+                            <span class="text-xs text-neutral-400 font-semibold uppercase">Oze Reward Points</span>
+                            <h3 class="text-3xl font-extrabold mt-2">450 Points</h3>
+                            <p class="text-xs text-neutral-500 mt-1">Equivalent to ৳450 discount</p>
+                        </div>
+                    </div>
+                    <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl p-6 sm:p-8">
+                        <h3 class="font-bold text-lg mb-4">My Orders & Digital Receipts (MySQL Database)</h3>
+                        <div class="space-y-4">
+                            ${orders.map(ord => `
+                                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-2xl gap-4">
+                                    <div>
+                                        <span class="text-xs font-bold text-neutral-400">Order ${ord.number} • Paid via ${ord.method}</span>
+                                        <h4 class="font-bold text-sm mt-0.5">${ord.items.map(i => i.name).join(', ')}</h4>
+                                        <span class="text-xs text-neutral-500">Placed on ${ord.date}</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-3">
+                                        <span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs font-bold px-3 py-1 rounded-full">${ord.status}</span>
+                                        <span class="font-extrabold text-sm">৳${ord.total.toLocaleString()}</span>
+                                        <button onclick="openTrackingModal()" class="px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-xl text-xs font-bold flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i> Track</button>
+                                        <button onclick="openReceiptModalFromOrder(${ord.id})" class="px-3 py-1.5 bg-black text-white dark:bg-white dark:text-black rounded-xl text-xs font-bold flex items-center gap-1"><i data-lucide="file-text" class="w-3 h-3"></i> Download Receipt</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (currentRole === 'vendor') {
+                badgeEl.textContent = 'Vendor / Merchant Role (Spatie Permission)';
+                titleEl.textContent = 'TechMart BD Merchant Dashboard';
+                subEl.textContent = 'Manage your product inventory, track incoming orders, and review store earnings in BDT.';
+
+                area.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder p-6 rounded-3xl">
+                            <span class="text-xs text-neutral-400 font-semibold uppercase">Total Sales (Oct)</span>
+                            <h3 class="text-3xl font-extrabold mt-2">৳1,42,500</h3>
+                        </div>
+                        <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder p-6 rounded-3xl">
+                            <span class="text-xs text-neutral-400 font-semibold uppercase">Active Products</span>
+                            <h3 class="text-3xl font-extrabold mt-2">${productsData.length} Items</h3>
+                        </div>
+                        <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder p-6 rounded-3xl">
+                            <span class="text-xs text-neutral-400 font-semibold uppercase">Pending Shipments</span>
+                            <h3 class="text-3xl font-extrabold mt-2">5 Orders</h3>
+                        </div>
+                        <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder p-6 rounded-3xl">
+                            <span class="text-xs text-neutral-400 font-semibold uppercase">Store Rating</span>
+                            <h3 class="text-3xl font-extrabold mt-2">4.9 ⭐</h3>
+                        </div>
+                    </div>
+                    <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl p-6 sm:p-8">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-bold text-lg">Inventory Management (MySQL Products Table)</h3>
+                            <button onclick="openProductForm()" class="bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded-xl text-xs font-bold">+ Add New Product</button>
+                        </div>
+                        <div class="space-y-4">
+                            ${productsData.map(p => `
+                                <div class="flex justify-between items-center p-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-2xl gap-4">
+                                    <div class="flex items-center gap-3">
+                                        <img src="${p.image}" class="w-12 h-12 object-cover rounded-xl">
+                                        <div>
+                                            <h4 class="font-bold text-sm">${p.name}</h4>
+                                            <span class="text-xs text-neutral-500">Category: ${p.category} • Vendor: ${p.vendor}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <div class="text-right">
+                                            <span class="font-extrabold text-sm">৳${p.price.toLocaleString()}</span>
+                                            <p class="text-xs text-emerald-600 font-semibold">${p.stock} in Stock</p>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button onclick="openProductForm(${p.id})" class="p-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-xs font-bold"><i data-lucide="edit" class="w-3.5 h-3.5"></i></button>
+                                            <button onclick="deleteProduct(${p.id})" class="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-lg text-xs font-bold"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (currentRole === 'admin') {
+                badgeEl.textContent = 'Admin Role (Global Oversight)';
+                titleEl.textContent = 'Oze Platform Control Panel';
+                subEl.textContent = 'System health, global vendor oversight, transaction logs, and platform analytics.';
+
+                area.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder p-6 rounded-3xl">
+                            <span class="text-xs text-neutral-400 font-semibold uppercase">Platform GMV (Oct)</span>
+                            <h3 class="text-3xl font-extrabold mt-2">৳48.5 Lakh</h3>
+                        </div>
+                        <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder p-6 rounded-3xl">
+                            <span class="text-xs text-neutral-400 font-semibold uppercase">Registered Users</span>
+                            <h3 class="text-3xl font-extrabold mt-2">${dbUsers.length} Users</h3>
+                        </div>
+                        <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder p-6 rounded-3xl">
+                            <span class="text-xs text-neutral-400 font-semibold uppercase">Active Menus</span>
+                            <h3 class="text-3xl font-extrabold mt-2">${dbMenus.length} Menus</h3>
+                        </div>
+                        <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder p-6 rounded-3xl">
+                            <span class="text-xs text-neutral-400 font-semibold uppercase">Server Status</span>
+                            <h3 class="text-3xl font-extrabold text-emerald-600 mt-2">99.98%</h3>
+                        </div>
+                    </div>
+                    <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl p-6 sm:p-8">
+                        <h3 class="font-bold text-lg mb-4">User Management (MySQL Users Table)</h3>
+                        <div class="space-y-4">
+                            ${dbUsers.map(u => `
+                                <div class="flex justify-between items-center p-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-2xl">
+                                    <div>
+                                        <h4 class="font-bold text-sm">${u.name}</h4>
+                                        <span class="text-xs text-neutral-500">${u.email} • Phone: ${u.phone}</span>
+                                    </div>
+                                    <span class="bg-neutral-100 dark:bg-neutral-800 text-xs font-bold px-3 py-1 rounded-full uppercase">${u.role}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (currentRole === 'superadmin') {
+                badgeEl.textContent = 'Super-Admin Role (Full Dynamic Control)';
+                titleEl.textContent = 'Super-Admin Control Center';
+                subEl.textContent = 'Dynamically create, edit, delete, and reorder navigation menus and granular role permissions in real time.';
+
+                area.innerHTML = `
+                    <div class="space-y-8">
+                        <!-- Menus Management Section -->
+                        <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl p-6 sm:p-8">
+                            <div class="flex justify-between items-center mb-6">
+                                <div>
+                                    <h3 class="font-bold text-lg">Dynamic Navigation Menus (MySQL Table: menus)</h3>
+                                    <p class="text-xs text-neutral-500 mt-0.5">Changes reflect instantly on storefront header and mobile drawer.</p>
+                                </div>
+                                <button onclick="openMenuForm()" class="bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded-xl text-xs font-bold">+ Create Menu Item</button>
+                            </div>
+                            <div class="space-y-3">
+                                ${dbMenus.sort((a,b)=>a.order - b.order).map(m => `
+                                    <div class="flex items-center justify-between p-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-2xl">
+                                        <div class="flex items-center gap-4">
+                                            <span class="w-6 h-6 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-bold flex items-center justify-center">${m.order}</span>
+                                            <div>
+                                                <h4 class="font-bold text-sm">${m.name}</h4>
+                                                <span class="text-xs text-neutral-400">Type: ${m.type} • Target: ${m.target}</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-xs font-bold px-2.5 py-1 rounded-full ${m.active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-neutral-200 text-neutral-600'}">${m.active ? 'Active' : 'Hidden'}</span>
+                                            <button onclick="openMenuForm(${m.id})" class="p-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-xs"><i data-lucide="edit" class="w-3.5 h-3.5"></i></button>
+                                            <button onclick="deleteMenu(${m.id})" class="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-lg text-xs"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Permissions Management Section -->
+                        <div class="bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl p-6 sm:p-8">
+                            <div class="flex justify-between items-center mb-6">
+                                <div>
+                                    <h3 class="font-bold text-lg">Granular Role Permissions (MySQL Table: permissions)</h3>
+                                    <p class="text-xs text-neutral-500 mt-0.5">Control access rights for Customer, Vendor, Admin, and Super-Admin roles.</p>
+                                </div>
+                                <button onclick="openPermissionForm()" class="bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded-xl text-xs font-bold">+ Add Permission</button>
+                            </div>
+                            <div class="space-y-3">
+                                ${dbPermissions.map(p => `
+                                    <div class="flex items-center justify-between p-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-2xl">
+                                        <div>
+                                            <h4 class="font-bold text-sm font-mono">${p.name}</h4>
+                                            <span class="text-xs text-neutral-500">${p.description}</span>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <span class="bg-neutral-100 dark:bg-neutral-800 text-xs font-bold px-3 py-1 rounded-full uppercase">${p.role}</span>
+                                            <button onclick="deletePermission(${p.id})" class="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-lg text-xs"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        /* ================= A-TO-Z CHECKOUT & RECEIPTS ================= */
+        function openCheckoutModal() {
+            if (cart.length === 0) { showToast('Your cart is empty', 'error'); return; }
+            const subtotal = cart.reduce((a, b) => a + (b.price * b.quantity), 0);
+            document.getElementById('chk-subtotal-val').textContent = `৳${subtotal.toLocaleString()}`;
+            document.getElementById('chk-total-val').textContent = `৳${(subtotal + 60).toLocaleString()}`;
+            closeCartDrawer();
+            const modal = document.getElementById('checkout-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById('checkout-modal').classList.remove('flex');
+            document.getElementById('checkout-modal').classList.add('hidden');
+        }
+
+        function processOrder(e) {
+            e.preventDefault();
+            const name = document.getElementById('chk-name').value;
+            const phone = document.getElementById('chk-phone').value;
+            const address = document.getElementById('chk-address').value;
+            const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+
+            const subtotal = cart.reduce((a, b) => a + (b.price * b.quantity), 0);
+            const total = subtotal + 60;
+            const orderNum = '#OZE-2026-' + Math.floor(1000 + Math.random() * 9000);
+
+            const newOrder = {
+                id: orders.length + 1,
+                number: orderNum,
+                date: 'Oct 29, 2026',
+                total: total,
+                method: paymentMethod,
+                status: 'Processing',
+                items: [...cart],
+                name: name,
+                phone: phone,
+                address: address
+            };
+
+            orders.unshift(newOrder);
+            cart = [];
+            saveCart();
+            saveLaravelDB();
+            updateBadgeCounts();
+            closeCheckoutModal();
+
+            showToast(`Order ${orderNum} placed successfully via ${paymentMethod}!`, 'success');
+            openReceiptModal(newOrder);
+        }
+
+        function openReceiptModal(ord) {
+            document.getElementById('receipt-number').textContent = ord.number;
+            document.getElementById('receipt-customer-name').textContent = ord.name || 'Tanvir Ahmed';
+            document.getElementById('receipt-customer-phone').textContent = ord.phone || '+880 1711-223344';
+            document.getElementById('receipt-customer-address').textContent = ord.address || 'House 42, Road 11, Banani, Dhaka';
+            document.getElementById('receipt-payment-method').textContent = ord.method;
+
+            const subtotal = ord.items.reduce((a, b) => a + (b.price * b.quantity), 0);
+            document.getElementById('receipt-subtotal').textContent = `৳${subtotal.toLocaleString()}`;
+            document.getElementById('receipt-total').textContent = `৳${ord.total.toLocaleString()}`;
+
+            const tbody = document.getElementById('receipt-items-table');
+            tbody.innerHTML = ord.items.map(item => `
+                <tr>
+                    <td class="p-3 font-medium">${item.name}</td>
+                    <td class="p-3 text-center">${item.quantity}</td>
+                    <td class="p-3 text-right">৳${item.price.toLocaleString()}</td>
+                    <td class="p-3 text-right font-bold">৳${(item.price * item.quantity).toLocaleString()}</td>
+                </tr>
+            `).join('');
+
+            const modal = document.getElementById('receipt-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function openReceiptModalFromOrder(id) {
+            const ord = orders.find(o => o.id === id);
+            if (ord) openReceiptModal(ord);
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receipt-modal').classList.remove('flex');
+            document.getElementById('receipt-modal').classList.add('hidden');
+        }
+
+        function openTrackingModal() {
+            const modal = document.getElementById('tracking-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+        }
+
+        function closeTrackingModal() {
+            document.getElementById('tracking-modal').classList.remove('flex');
+            document.getElementById('tracking-modal').classList.add('hidden');
+        }
+
+        /* ================= SUPER-ADMIN CRUD MODALS (MENUS & PRODUCTS) ================= */
+        function openDynamicModal(title, htmlContent) {
+            document.getElementById('form-modal-title').textContent = title;
+            document.getElementById('form-modal-body').innerHTML = htmlContent;
+            const modal = document.getElementById('dynamic-form-modal');
+            const content = document.getElementById('dynamic-form-content');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => { content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
+            lucide.createIcons();
+        }
+
+        function closeDynamicFormModal() {
+            const modal = document.getElementById('dynamic-form-modal');
+            const content = document.getElementById('dynamic-form-content');
+            content.classList.remove('scale-100'); content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.remove('flex'); modal.classList.add('hidden'); }, 200);
+        }
+
+        // Menu CRUD
+        function openMenuForm(id = null) {
+            let menu = { name: '', type: 'category', target: '', order: dbMenus.length + 1, active: true };
+            if (id) menu = dbMenus.find(m => m.id === id);
+
+            openDynamicModal(id ? 'Edit Menu Item (MySQL)' : 'Create New Menu Item (MySQL)', `
+                <form onsubmit="saveMenu(event, ${id})" class="space-y-4 text-sm">
+                    <div>
+                        <label class="block font-semibold mb-1">Menu Name</label>
+                        <input type="text" id="menu-name" value="${menu.name}" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Menu Type</label>
+                        <select id="menu-type" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                            <option value="category" ${menu.type === 'category' ? 'selected' : ''}>Category Filter</option>
+                            <option value="link" ${menu.type === 'link' ? 'selected' : ''}>Custom Link / Flash</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Target / Category Name</label>
+                        <input type="text" id="menu-target" value="${menu.target}" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Display Order</label>
+                        <input type="number" id="menu-order" value="${menu.order}" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                    </div>
+                    <div class="flex items-center gap-2 pt-2">
+                        <input type="checkbox" id="menu-active" ${menu.active ? 'checked' : ''} class="w-4 h-4 rounded">
+                        <label for="menu-active" class="font-semibold">Active / Visible</label>
+                    </div>
+                    <button type="submit" class="w-full bg-black text-white dark:bg-white dark:text-black py-3 rounded-xl font-bold mt-4 shadow-lg">Save Menu Item</button>
+                </form>
+            `);
+        }
+
+        function saveMenu(e, id) {
+            e.preventDefault();
+            const name = document.getElementById('menu-name').value;
+            const type = document.getElementById('menu-type').value;
+            const target = document.getElementById('menu-target').value;
+            const order = parseInt(document.getElementById('menu-order').value);
+            const active = document.getElementById('menu-active').checked;
+
+            if (id) {
+                const m = dbMenus.find(item => item.id === id);
+                if (m) { m.name = name; m.type = type; m.target = target; m.order = order; m.active = active; }
+                showToast('Menu updated successfully in MySQL', 'success');
+            } else {
+                const newId = dbMenus.length > 0 ? Math.max(...dbMenus.map(m => m.id)) + 1 : 1;
+                dbMenus.push({ id: newId, name, type, target, order, active });
+                showToast('Menu created successfully in MySQL', 'success');
+            }
+            saveLaravelDB();
+            closeDynamicFormModal();
+            renderDynamicMenus();
+            renderDashboardContent();
+        }
+
+        function deleteMenu(id) {
+            dbMenus = dbMenus.filter(m => m.id !== id);
+            saveLaravelDB();
+            showToast('Menu deleted successfully', 'info');
+            renderDynamicMenus();
+            renderDashboardContent();
+        }
+
+        // Permission CRUD
+        function openPermissionForm() {
+            openDynamicModal('Add Role Permission (MySQL)', `
+                <form onsubmit="savePermission(event)" class="space-y-4 text-sm">
+                    <div>
+                        <label class="block font-semibold mb-1">Permission Slug (e.g. manage_orders)</label>
+                        <input type="text" id="perm-name" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Target Role</label>
+                        <select id="perm-role" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                            <option value="customer">Customer</option>
+                            <option value="vendor">Vendor</option>
+                            <option value="admin">Admin</option>
+                            <option value="superadmin">Super-Admin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Description</label>
+                        <input type="text" id="perm-desc" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                    </div>
+                    <button type="submit" class="w-full bg-black text-white dark:bg-white dark:text-black py-3 rounded-xl font-bold mt-4 shadow-lg">Save Permission</button>
+                </form>
+            `);
+        }
+
+        function savePermission(e) {
+            e.preventDefault();
+            const name = document.getElementById('perm-name').value;
+            const role = document.getElementById('perm-role').value;
+            const description = document.getElementById('perm-desc').value;
+            const newId = dbPermissions.length > 0 ? Math.max(...dbPermissions.map(p => p.id)) + 1 : 1;
+            
+            dbPermissions.push({ id: newId, name, role, description });
+            saveLaravelDB();
+            closeDynamicFormModal();
+            showToast('Permission added successfully', 'success');
+            renderDashboardContent();
+        }
+
+        function deletePermission(id) {
+            dbPermissions = dbPermissions.filter(p => p.id !== id);
+            saveLaravelDB();
+            showToast('Permission deleted', 'info');
+            renderDashboardContent();
+        }
+
+        // Product CRUD
+        function openProductForm(id = null) {
+            let p = { name: '', category: 'Electronics', price: 1000, originalPrice: 1500, discount: 20, rating: 5.0, reviews: 1, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80', badge: 'New', isFlashSale: false, stock: 20, vendor: 'TechMart BD', description: 'Product description here.' };
+            if (id) p = productsData.find(item => item.id === id);
+
+            openDynamicModal(id ? 'Edit Product (MySQL)' : 'Add Product (MySQL)', `
+                <form onsubmit="saveProduct(event, ${id})" class="space-y-4 text-sm">
+                    <div>
+                        <label class="block font-semibold mb-1">Product Name</label>
+                        <input type="text" id="prod-name" value="${p.name}" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-semibold mb-1">Price (৳)</label>
+                            <input type="number" id="prod-price" value="${p.price}" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1">Original Price (৳)</label>
+                            <input type="number" id="prod-orig" value="${p.originalPrice}" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-semibold mb-1">Category</label>
+                            <input type="text" id="prod-cat" value="${p.category}" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1">Stock Quantity</label>
+                            <input type="number" id="prod-stock" value="${p.stock}" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Image URL</label>
+                        <input type="url" id="prod-img" value="${p.image}" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Description</label>
+                        <textarea id="prod-desc" required class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl p-3 focus:outline-none">${p.description}</textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-black text-white dark:bg-white dark:text-black py-3 rounded-xl font-bold mt-4 shadow-lg">Save Product</button>
+                </form>
+            `);
+        }
+
+        function saveProduct(e, id) {
+            e.preventDefault();
+            const name = document.getElementById('prod-name').value;
+            const price = parseFloat(document.getElementById('prod-price').value);
+            const originalPrice = parseFloat(document.getElementById('prod-orig').value);
+            const category = document.getElementById('prod-cat').value;
+            const stock = parseInt(document.getElementById('prod-stock').value);
+            const image = document.getElementById('prod-img').value;
+            const description = document.getElementById('prod-desc').value;
+
+            if (id) {
+                const item = productsData.find(i => i.id === id);
+                if (item) { item.name = name; item.price = price; item.originalPrice = originalPrice; item.category = category; item.stock = stock; item.image = image; item.description = description; }
+                showToast('Product updated successfully in MySQL', 'success');
+            } else {
+                const newId = productsData.length > 0 ? Math.max(...productsData.map(i => i.id)) + 1 : 1;
+                productsData.push({ id: newId, name, category, price, originalPrice, discount: 20, rating: 5.0, reviews: 1, image, badge: 'New', isFlashSale: false, stock, vendor: 'TechMart BD', description });
+                showToast('Product created successfully in MySQL', 'success');
+            }
+            saveLaravelDB();
+            closeDynamicFormModal();
+            renderProducts();
+            renderFlashSale();
+            renderDashboardContent();
+        }
+
+        function deleteProduct(id) {
+            productsData = productsData.filter(i => i.id !== id);
+            saveLaravelDB();
+            showToast('Product deleted from MySQL', 'info');
+            renderProducts();
+            renderFlashSale();
+            renderDashboardContent();
+        }
+
+        /* ================= CATEGORIES & CATALOG ================= */
+        function renderCategories() {
+            const categoryGrid = document.getElementById('category-grid');
+            if (!categoryGrid) return;
+            categoryGrid.innerHTML = categoriesList.map(cat => `
+                <div onclick="filterByCategory('${cat.name}')" class="group bg-neutral-50 dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-2xl p-5 text-center cursor-pointer hover:border-black dark:hover:border-white transition-all shadow-sm hover:shadow-md">
+                    <div class="w-12 h-12 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition">
+                        <i data-lucide="${cat.icon}" class="w-6 h-6"></i>
+                    </div>
+                    <h4 class="font-bold text-sm mb-1 group-hover:underline">${cat.name}</h4>
+                    <span class="text-[11px] text-neutral-400">${cat.count} Items</span>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function filterByCategory(category) {
+            currentCategoryFilter = category;
+            currentTab = 'all';
+            switchView('storefront');
+            renderDynamicMenus();
+            renderProducts();
+            document.getElementById('featured-section').scrollIntoView({ behavior: 'smooth' });
+            showToast(`Filtered by ${category}`, 'info');
+        }
+
+        function resetFilters() {
+            currentCategoryFilter = 'all';
+            currentTab = 'all';
+            currentSort = 'featured';
+            document.getElementById('sort-select').value = 'featured';
+            renderDynamicMenus();
+            renderProducts();
+            showToast('Filters reset', 'info');
+        }
+
+        /* ================= CAROUSEL & COUNTDOWN ================= */
+        let slideInterval = setInterval(() => { nextSlide(); }, 6000);
+
+        function updateCarousel() {
+            const carousel = document.getElementById('hero-carousel');
+            if (carousel) {
+                carousel.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
+                document.getElementById('indicator-0').className = currentSlideIndex === 0 ? 'w-8 h-1.5 rounded-full bg-white transition-all' : 'w-3 h-1.5 rounded-full bg-white/50 transition-all';
+                document.getElementById('indicator-1').className = currentSlideIndex === 1 ? 'w-8 h-1.5 rounded-full bg-white transition-all' : 'w-3 h-1.5 rounded-full bg-white/50 transition-all';
+            }
+        }
+        function nextSlide() { currentSlideIndex = (currentSlideIndex + 1) % 2; updateCarousel(); }
+        function prevSlide() { currentSlideIndex = (currentSlideIndex - 1 + 2) % 2; updateCarousel(); }
+        function currentSlide(i) { currentSlideIndex = i; updateCarousel(); }
+
+        function initCountdown() {
+            let secs = 9 * 3600 + 34 * 60 + 12;
+            setInterval(() => {
+                if (secs > 0) secs--;
+                const h = Math.floor(secs / 3600);
+                const m = Math.floor((secs % 3600) / 60);
+                const s = secs % 60;
+                if (document.getElementById('timer-hours')) {
+                    document.getElementById('timer-hours').textContent = String(h).padStart(2, '0');
+                    document.getElementById('timer-mins').textContent = String(m).padStart(2, '0');
+                    document.getElementById('timer-secs').textContent = String(s).padStart(2, '0');
+                }
+            }, 1000);
+        }
+
+        function renderFlashSale() {
+            const grid = document.getElementById('flash-sale-grid');
+            if (!grid) return;
+            const flashProducts = productsData.filter(p => p.isFlashSale);
+            grid.innerHTML = flashProducts.map(p => createProductCardHTML(p, true)).join('');
+            lucide.createIcons();
+        }
+
+        /* ================= PRODUCTS, TABS & SORTING ================= */
+        function switchTab(tab) {
+            currentTab = tab;
+            ['all', 'bestseller', 'new'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if (btn) {
+                    btn.className = t === tab ? 'px-4 py-2 rounded-full bg-black text-white dark:bg-white dark:text-black transition' : 'px-4 py-2 rounded-full text-neutral-600 dark:text-neutral-300 transition';
+                }
+            });
+            renderProducts();
+        }
+
+        function sortProducts(sortType) {
+            currentSort = sortType;
+            renderProducts();
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('product-grid');
+            const emptyState = document.getElementById('product-empty-state');
+            if (!grid) return;
+
+            let filtered = [...productsData];
+            if (currentCategoryFilter !== 'all') filtered = filtered.filter(p => p.category === currentCategoryFilter);
+            if (currentTab === 'bestseller') filtered = filtered.filter(p => p.badge === 'Best Seller');
+            else if (currentTab === 'new') filtered = filtered.filter(p => p.badge === 'New');
+
+            if (currentSort === 'low-high') filtered.sort((a, b) => a.price - b.price);
+            else if (currentSort === 'high-low') filtered.sort((a, b) => b.price - a.price);
+            else if (currentSort === 'rating') filtered.sort((a, b) => b.rating - a.rating);
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            grid.innerHTML = filtered.map(p => createProductCardHTML(p, false)).join('');
+            lucide.createIcons();
+        }
+
+        function createProductCardHTML(p, isFlash) {
+            const isWishlisted = wishlist.some(i => i.id === p.id);
+            return `
+                <div class="bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-3xl p-4 flex flex-col justify-between relative group hover:shadow-xl transition-all duration-300">
+                    <div>
+                        <div class="flex items-center justify-between mb-3 z-10 relative">
+                            <span class="bg-black text-white dark:bg-white dark:text-black text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">${p.badge}</span>
+                            <button onclick="toggleWishlist(${p.id})" class="p-2 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:scale-110 transition text-neutral-600 dark:text-neutral-300" aria-label="Wishlist">
+                                <i data-lucide="heart" class="w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}"></i>
+                            </button>
+                        </div>
+                        <div class="relative rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-900 mb-4 aspect-square cursor-pointer" onclick="openQuickView(${p.id})">
+                            <img src="${p.image}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+                            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                <span class="bg-white text-black text-xs font-bold px-4 py-2 rounded-full shadow-lg">Quick View</span>
+                            </div>
+                        </div>
+                        <span class="text-[11px] font-semibold uppercase text-neutral-400 tracking-wider">${p.category}</span>
+                        <h3 onclick="openQuickView(${p.id})" class="font-bold text-sm line-clamp-2 mt-1 mb-2 hover:underline cursor-pointer">${p.name}</h3>
+                        <div class="flex items-center gap-1.5 text-xs text-neutral-500 mb-3">
+                            <div class="flex items-center text-amber-500"><i data-lucide="star" class="w-3.5 h-3.5 fill-amber-500"></i></div>
+                            <span class="font-bold text-neutral-800 dark:text-neutral-200">${p.rating}</span>
+                            <span>(${p.reviews})</span>
+                        </div>
+                    </div>
+                    <div>
+                        ${isFlash ? `
+                            <div class="mb-3">
+                                <div class="flex justify-between text-[11px] font-semibold text-neutral-500 mb-1">
+                                    <span>Stock</span>
+                                    <span>${p.stock} left</span>
+                                </div>
+                                <div class="w-full bg-neutral-100 dark:bg-neutral-800 h-1.5 rounded-full overflow-hidden">
+                                    <div class="bg-black dark:bg-white h-full rounded-full" style="width: ${(p.stock / 40) * 100}%"></div>
+                                </div>
+                            </div>
+                        ` : ''}
+                        <div class="flex items-center justify-between pt-3 border-t border-neutral-100 dark:border-neutral-800">
+                            <div>
+                                <span class="text-base font-extrabold">৳${p.price.toLocaleString()}</span>
+                                <span class="text-xs text-neutral-400 line-through ml-1.5">৳${p.originalPrice.toLocaleString()}</span>
+                            </div>
+                            <button onclick="addToCart(${p.id})" class="bg-black text-white dark:bg-white dark:text-black p-2.5 rounded-xl hover:opacity-95 transition shadow-sm" aria-label="Add to Cart">
+                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /* ================= LIVE SEARCH ================= */
+        function initSearch() {
+            const searchInput = document.getElementById('search-input');
+            const mobileSearchInput = document.getElementById('mobile-search-input');
+            const dropdown = document.getElementById('search-dropdown');
+            const clearBtn = document.getElementById('clear-search');
+
+            function handleQuery(e) {
+                const q = e.target.value.toLowerCase().trim();
+                if (q.length > 0) {
+                    if (clearBtn) clearBtn.classList.remove('hidden');
+                    const matches = productsData.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+                    if (matches.length > 0) {
+                        dropdown.innerHTML = matches.map(m => `
+                            <div onclick="openQuickView(${m.id}); dropdown.classList.add('hidden');" class="flex items-center gap-3 p-3 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl cursor-pointer transition">
+                                <img src="${m.image}" alt="${m.name}" class="w-10 h-10 object-cover rounded-lg">
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-xs line-clamp-1">${m.name}</h4>
+                                    <span class="text-[11px] text-neutral-400">৳${m.price.toLocaleString()} • ${m.category}</span>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        dropdown.innerHTML = `<div class="p-4 text-center text-xs text-neutral-500">No Oze products found matching "${q}"</div>`;
+                    }
+                    dropdown.classList.remove('hidden');
+                } else {
+                    if (clearBtn) clearBtn.classList.add('hidden');
+                    dropdown.classList.add('hidden');
+                }
+            }
+
+            if (searchInput) searchInput.addEventListener('input', handleQuery);
+            if (mobileSearchInput) mobileSearchInput.addEventListener('input', handleQuery);
+        }
+
+        /* ================= CART & WISHLIST ================= */
+        function addToCart(productId) {
+            const p = productsData.find(item => item.id === productId);
+            if (!p) return;
+            const existing = cart.find(i => i.id === productId);
+            if (existing) existing.quantity += 1;
+            else cart.push({ ...p, quantity: 1 });
+            saveCart();
+            updateBadgeCounts();
+            renderCartItems();
+            showToast(`Added "${p.name.substring(0, 22)}..." to cart`, 'success');
+        }
+
+        function updateCartQuantity(productId, delta) {
+            const item = cart.find(i => i.id === productId);
+            if (!item) return;
+            item.quantity += delta;
+            if (item.quantity <= 0) cart = cart.filter(i => i.id !== productId);
+            saveCart();
+            updateBadgeCounts();
+            renderCartItems();
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(i => i.id !== productId);
+            saveCart();
+            updateBadgeCounts();
+            renderCartItems();
+            showToast('Item removed from cart', 'info');
+        }
+
+        function saveCart() { localStorage.setItem('oze_cart', JSON.stringify(cart)); }
+
+        function renderCartItems() {
+            const container = document.getElementById('cart-items-container');
+            const subtotalEl = document.getElementById('cart-subtotal');
+            const totalEl = document.getElementById('cart-total');
+            const countBadge = document.getElementById('cart-count-badge');
+            if (!container) return;
+
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-16">
+                        <div class="w-12 h-12 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto mb-3 text-neutral-400"><i data-lucide="shopping-bag" class="w-6 h-6"></i></div>
+                        <h4 class="font-bold text-sm">Your cart is empty</h4>
+                    </div>
+                `;
+                if (subtotalEl) subtotalEl.textContent = '৳0';
+                if (totalEl) totalEl.textContent = '৳0';
+                if (countBadge) countBadge.textContent = '0 items';
+                lucide.createIcons();
+                return;
+            }
+
+            let subtotal = 0;
+            container.innerHTML = cart.map(item => {
+                subtotal += item.price * item.quantity;
+                return `
+                    <div class="flex items-center gap-4 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-2xl p-3">
+                        <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded-xl">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-xs line-clamp-1">${item.name}</h4>
+                            <span class="text-xs font-extrabold">৳${item.price.toLocaleString()}</span>
+                            <div class="flex items-center gap-3 mt-2">
+                                <div class="flex items-center bg-white dark:bg-darkCard border border-neutral-200 dark:border-darkBorder rounded-lg">
+                                    <button onclick="updateCartQuantity(${item.id}, -1)" class="px-2 py-1 text-xs">-</button>
+                                    <span class="px-2.5 text-xs font-bold">${item.quantity}</span>
+                                    <button onclick="updateCartQuantity(${item.id}, 1)" class="px-2 py-1 text-xs">+</button>
+                                </div>
+                                <button onclick="removeFromCart(${item.id})" class="text-xs text-neutral-400 hover:text-red-500 transition">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (subtotalEl) subtotalEl.textContent = `৳${subtotal.toLocaleString()}`;
+            if (totalEl) totalEl.textContent = `৳${subtotal.toLocaleString()}`;
+            if (countBadge) countBadge.textContent = `${cart.reduce((a, b) => a + b.quantity, 0)} items`;
+            lucide.createIcons();
+        }
+
+        function openCartDrawer() {
+            renderCartItems();
+            const drawer = document.getElementById('cart-drawer');
+            const content = document.getElementById('cart-drawer-content');
+            drawer.classList.remove('hidden');
+            setTimeout(() => { drawer.classList.remove('opacity-0'); content.classList.remove('translate-x-full'); }, 10);
+        }
+
+        function closeCartDrawer() {
+            const drawer = document.getElementById('cart-drawer');
+            const content = document.getElementById('cart-drawer-content');
+            drawer.classList.add('opacity-0');
+            content.classList.add('translate-x-full');
+            setTimeout(() => { drawer.classList.add('hidden'); }, 300);
+        }
+
+        function toggleWishlist(productId) {
+            const p = productsData.find(i => i.id === productId);
+            if (!p) return;
+            const idx = wishlist.findIndex(i => i.id === productId);
+            if (idx > -1) { wishlist.splice(idx, 1); showToast('Removed from wishlist', 'info'); }
+            else { wishlist.push(p); showToast('Added to wishlist', 'success'); }
+            localStorage.setItem('oze_wishlist', JSON.stringify(wishlist));
+            updateBadgeCounts();
+            renderProducts();
+            renderFlashSale();
+        }
+
+        function renderWishlistItems() {
+            const container = document.getElementById('wishlist-items-container');
+            const countHeader = document.getElementById('wishlist-count-header');
+            if (!container) return;
+            if (wishlist.length === 0) {
+                container.innerHTML = `<div class="text-center py-16"><h4 class="font-bold text-sm">Your wishlist is empty</h4></div>`;
+                if (countHeader) countHeader.textContent = '0 items';
+                return;
+            }
+            container.innerHTML = wishlist.map(item => `
+                <div class="flex items-center justify-between gap-4 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-darkBorder rounded-2xl p-4">
+                    <div class="flex items-center gap-4">
+                        <img src="${item.image}" class="w-16 h-16 object-cover rounded-xl">
+                        <div>
+                            <h4 class="font-bold text-sm line-clamp-1">${item.name}</h4>
+                            <span class="text-xs font-extrabold">৳${item.price.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="addToCart(${item.id}); toggleWishlist(${item.id}); closeWishlistModal(); openCartDrawer();" class="bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded-xl text-xs font-bold">Move to Cart</button>
+                        <button onclick="toggleWishlist(${item.id})" class="p-2 text-neutral-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            if (countHeader) countHeader.textContent = `${wishlist.length} items`;
+            lucide.createIcons();
+        }
+
+        function openWishlistModal() {
+            renderWishlistItems();
+            const modal = document.getElementById('wishlist-modal');
+            const content = document.getElementById('wishlist-modal-content');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => { content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
+        }
+
+        function closeWishlistModal() {
+            const modal = document.getElementById('wishlist-modal');
+            const content = document.getElementById('wishlist-modal-content');
+            content.classList.remove('scale-100'); content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.remove('flex'); modal.classList.add('hidden'); }, 200);
+        }
+
+        function openQuickView(productId) {
+            const p = productsData.find(i => i.id === productId);
+            if (!p) return;
+            document.getElementById('quickview-body').innerHTML = `
+                <div class="aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-900">
+                    <img src="${p.image}" class="w-full h-full object-cover">
+                </div>
+                <div class="flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full">${p.category}</span>
+                        <h2 class="text-xl sm:text-2xl font-extrabold mt-3 mb-2">${p.name}</h2>
+                        <div class="flex items-center gap-2 text-sm mb-4">
+                            <span class="text-amber-500 font-bold">★ ${p.rating}</span>
+                            <span class="text-neutral-400">(${p.reviews} reviews)</span>
+                            <span class="text-xs text-neutral-500 ml-2">Vendor: ${p.vendor}</span>
+                        </div>
+                        <div class="flex items-center gap-3 mb-6">
+                            <span class="text-2xl font-extrabold">৳${p.price.toLocaleString()}</span>
+                            <span class="text-sm text-neutral-400 line-through">৳${p.originalPrice.toLocaleString()}</span>
+                        </div>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed mb-6">${p.description}</p>
+                    </div>
+                    <div class="flex items-center gap-4 pt-6 border-t border-neutral-200 dark:border-darkBorder">
+                        <button onclick="addToCart(${p.id}); closeQuickView(); openCartDrawer();" class="flex-1 bg-black text-white dark:bg-white dark:text-black py-3.5 rounded-2xl font-semibold text-sm hover:opacity-95 shadow-lg">Add to Cart</button>
+                    </div>
+                </div>
+            `;
+            const modal = document.getElementById('quickview-modal');
+            const content = document.getElementById('quickview-modal-content');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => { content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
+            lucide.createIcons();
+        }
+
+        function closeQuickView() {
+            const modal = document.getElementById('quickview-modal');
+            const content = document.getElementById('quickview-modal-content');
+            content.classList.remove('scale-100'); content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.remove('flex'); modal.classList.add('hidden'); }, 200);
+        }
+
+        function openStaticModal(title) {
+            const modal = document.getElementById('static-modal');
+            document.getElementById('static-modal-title').textContent = title;
+            document.getElementById('static-modal-body').innerHTML = `
+                <h4 class="font-bold text-base text-neutral-900 dark:text-neutral-100">${title} - Oze Bangladesh</h4>
+                <p>Oze is a high-performance minimalist e-commerce ecosystem designed for Bangladesh with robust Laravel backend architecture, BDT currency support, and dynamic MySQL menu and permission management.</p>
+            `;
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+        }
+
+        function closeStaticModal() {
+            document.getElementById('static-modal').classList.remove('flex');
+            document.getElementById('static-modal').classList.add('hidden');
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'error' ? 'bg-red-600 text-white' : (type === 'info' ? 'bg-neutral-800 text-white' : 'bg-black text-white dark:bg-white dark:text-black');
+            toast.className = `pointer-events-auto px-5 py-3 rounded-2xl shadow-2xl text-xs font-semibold transform translate-y-4 opacity-0 transition-all duration-300 ${bgClass}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-4', 'opacity-0'), 10);
+            setTimeout(() => { toast.classList.add('translate-y-4', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3500);
+        }
+
+        function updateBadgeCounts() {
+            const cartBadge = document.getElementById('cart-badge');
+            const wishlistBadge = document.getElementById('wishlist-badge');
+            if (cartBadge) cartBadge.textContent = cart.reduce((a, b) => a + b.quantity, 0);
+            if (wishlistBadge) {
+                wishlistBadge.textContent = wishlist.length;
+                if (wishlist.length > 0) wishlistBadge.classList.remove('scale-0');
+                else wishlistBadge.classList.add('scale-0');
+            }
+        }
+
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileDrawer = document.getElementById('mobile-drawer');
+        const mobileDrawerContent = document.getElementById('mobile-drawer-content');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileDrawer.classList.remove('hidden');
+                setTimeout(() => { mobileDrawer.classList.remove('opacity-0'); mobileDrawerContent.classList.remove('-translate-x-full'); }, 10);
+            });
+        }
+        function closeMobileMenu() {
+            mobileDrawer.classList.add('opacity-0'); mobileDrawerContent.classList.add('-translate-x-full');
+            setTimeout(() => { mobileDrawer.classList.add('hidden'); }, 300);
+        }
+    </script>
+</body>
+</html>
